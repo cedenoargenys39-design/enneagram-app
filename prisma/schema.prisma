@@ -1,0 +1,89 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Question {
+  id          String   @id @default(cuid())
+  code        String   @unique // ej. "T1-FEAR-01"
+  block       String   // "center" | "type" | "subtype"
+  dimension   String   // "miedo" | "defensa" | "conflicto" | "estres_seguridad" | "deseo" | "subtipo_energia" ...
+  text        String
+  scaleType   String   // "likert6" | "forced_choice" | "scenario"
+  mirrorGroup String?  // agrupa items espejo, null si no aplica
+  order       Int      @default(0)
+  active      Boolean  @default(true)
+  options     Option[]
+  responses   Response[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Option {
+  id              String   @id @default(cuid())
+  questionId      String
+  text            String
+  order           Int      @default(0)
+  // vector de verosimilitud por tipo, ej: {"1":0.1,"2":0.8,...,"9":0.05}
+  typeWeights     Json
+  // vector de verosimilitud por instinto, ej: {"SP":0.7,"SO":0.2,"SX":0.1}, null si la pregunta no aporta señal de subtipo
+  instinctWeights Json?
+
+  question  Question   @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  responses Response[]
+
+  @@index([questionId])
+}
+
+model Session {
+  id                 String   @id @default(cuid())
+  userId             String? // null = sesión anónima
+  status             String   @default("in_progress") // in_progress | paused | completed
+  currentBlock       String   @default("center")
+  // posterior vigente sobre los 9 tipos, ej {"1":0.11,...}
+  typePosterior      Json
+  // posterior vigente sobre instintos, null hasta que arranca el bloque de subtipo
+  instinctPosterior  Json?
+  inconsistencyScore Float    @default(0)
+  adaptiveBranchUsed Boolean  @default(false)
+
+  responses Response[]
+  report    Report?
+
+  startedAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Response {
+  id             String   @id @default(cuid())
+  sessionId      String
+  questionId     String
+  optionId       String
+  responseTimeMs Int
+  createdAt      DateTime @default(now())
+
+  session  Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [questionId], references: [id])
+  option   Option   @relation(fields: [optionId], references: [id])
+
+  @@index([sessionId])
+}
+
+model Report {
+  id           String   @id @default(cuid())
+  sessionId    String   @unique
+  typeResult   Int
+  wingResult   Int?
+  instinctResult String?
+  confidence   Float
+  // snapshot JSON completo: rankings, justificaciones, contradicciones, fortalezas, puntos ciegos, etc.
+  fullData     Json
+  createdAt    DateTime @default(now())
+
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+}

@@ -1,0 +1,43 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: 255 255 255;
+  --surface: 250 250 250;
+  --border: 228 228 231;
+  --text: 24 24 27;
+  --text-muted: 113 113 122;
+  --accent: 79 70 229;
+  --accent-fg: 255 255 255;
+}
+
+.dark {
+  --bg: 9 9 11;
+  --surface: 17 17 20;
+  --border: 39 39 42;
+  --text: 244 244 245;
+  --text-muted: 161 161 170;
+  --accent: 129 140 248;
+  --accent-fg: 17 17 20;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  background-color: rgb(var(--bg));
+  color: rgb(var(--text));
+}
+
+body {
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.focus-ring:focus-visible {
+  outline: 2px solid rgb(var(--accent));
+  outline-offset: 2px;
+}
